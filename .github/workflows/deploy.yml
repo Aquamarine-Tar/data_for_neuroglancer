@@ -1,0 +1,38 @@
+name: Deploy Neuroglancer Data
+on:
+  push:
+    branches: ["main"]  # 如果你的主分支叫 master，请改为 master
+
+# 授予此脚本发布 Pages 的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps:deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true # 【关键点 1】告诉 GitHub 下载真实 LFS 数据而非指针
+
+      - name: Force LFS Pull
+        run: git lfs pull # 【关键点 2】确保所有数据块（Chunks）都被完整拉取
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 部署整个仓库。如果你数据在子目录，也可以指定路径
+          path: '.' 
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
